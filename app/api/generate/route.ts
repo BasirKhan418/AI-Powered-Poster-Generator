@@ -297,6 +297,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const response = await client.images.generate({
       model: "black-forest-labs/flux-dev",
       response_format: "b64_json",
+      //@ts-ignore
       extra_body: {
         response_extension: "png",
         width: width,
