@@ -33,7 +33,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 export function PosterGenerator() {
   const [loading, setLoading] = useState(false)
   const [posterGenerated, setPosterGenerated] = useState(false)
-
+  const [image,setImage] = useState("")
   // Form state
   const [formData, setFormData] = useState({
     title: "",
@@ -58,9 +58,36 @@ export function PosterGenerator() {
     }))
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async() => {
     setLoading(true)
+    try{
+     const res = await fetch("/api/generate", {
+      method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+    })
 
+    const data = await res.json()
+setLoading(false)
+    if(data.success){
+      setPosterGenerated(true)
+      toast.success("Poster generated successfully!")
+      setImage(data.data)
+    }
+    else{
+        setLoading(false)
+        toast.error("Error generating poster. Please try again.")
+    }
+
+    }
+    catch (error) {
+        console.error("Error generating poster:", error)
+        setLoading(false)
+        toast.error("Error generating poster. Please try again.")
+        return
+    }
     // Log all parameters
     console.log("Generating poster with parameters:", formData)
 
@@ -74,7 +101,17 @@ export function PosterGenerator() {
 
   const handleSave = () => {
     console.log("Saving poster with parameters:", formData)
-   toast.success("Poster saved to gallery!");
+     let newobj = {...formData,image:image}
+     if(localStorage.getItem("posters")){
+        let posters = JSON.parse(localStorage.getItem("posters") || "")
+        posters.push(newobj)
+        localStorage.setItem("posters", JSON.stringify(posters))
+     }
+     else{
+        let posters = [newobj]
+        localStorage.setItem("posters", JSON.stringify(posters));
+     }
+     toast.success("Poster saved to gallery!");
   }
 
   const handleCopyParams = () => {
@@ -411,32 +448,24 @@ export function PosterGenerator() {
                   >
                     <div className="absolute inset-0 bg-gradient-to-b from-purple-500/10 to-slate-900/20"></div>
                     <img
-                      src="/placeholder.svg?height=600&width=400"
+                      src={`data:image/png;base64,${image}`}
                       alt="Generated poster preview"
                       className="w-full h-full object-cover"
                     />
-
-                    <div className="absolute inset-0 flex flex-col justify-between p-6">
-                      <div className="text-center">
-                        <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-md">
-                          {formData.title || "Your Poster Title"}
-                        </h2>
-                      </div>
-
-                      <div className="text-center">
-                        <p className="text-white/90 drop-shadow-md">
-                          {formData.description.substring(0, 100) || "Poster description will appear here"}
-                          {formData.description.length > 100 ? "..." : ""}
-                        </p>
-                      </div>
-                    </div>
                   </div>
-
                   <div className="absolute bottom-4 right-4 flex gap-2">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="sm" variant="secondary">
+                          <Button size="sm" variant="secondary" onClick={()=>{
+                            const link = document.createElement("a")
+                            link.href = `data:image/png;base64,${image}`
+                            link.download = `${formData.title || "poster"}.png`
+                            document.body.appendChild(link)
+                            link.click()
+                            document.body.removeChild(link)
+                            toast.success("Poster downloaded successfully!")
+                          }}>
                             <Download className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
@@ -449,7 +478,17 @@ export function PosterGenerator() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="sm" variant="secondary">
+                          <Button size="sm" variant="secondary"
+                          onClick={()=>{
+                            const link = document.createElement("a")
+                            link.href = `data:image/png;base64,${image}`
+                            link.download = `${formData.title || "poster"}.png`
+                            document.body.appendChild(link)
+                            link.click()
+                            document.body.removeChild(link)
+                            toast.success("Poster downloaded successfully!")
+                          }}
+                          >
                             <Share2 className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
